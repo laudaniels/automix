@@ -4,6 +4,7 @@ torchaudio>=2.2
 transformers>=4.40
 encodec>=0.1.1
 soundfile>=0.12
+gradio>=4.0
 wandb>=0.16
 tqdm>=4.65
 matplotlib>=3.8
