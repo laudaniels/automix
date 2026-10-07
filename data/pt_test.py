@@ -1,5 +1,10 @@
-import torch 
-file_path = "/home/aditya/DSU-W2025-FlowFusion-Automated-Song-Transitions/data/processed-tokens/Don't_Stop_The_Music_-_Rihanna_encoded_codes.pt"
+import os
+import torch
+
+file_path = os.path.join(
+    os.environ.get("AUTOMIX_DATA_PATH", os.path.join(os.path.dirname(__file__), "processed-tokens")),
+    "Don't_Stop_The_Music_-_Rihanna_encoded_codes.pt",
+)
 data = torch.load(file_path)  # Load the tokenized input
 
 if not isinstance(data, torch.Tensor):

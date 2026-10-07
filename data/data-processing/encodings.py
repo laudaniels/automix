@@ -1,14 +1,23 @@
 import argparse
+import soundfile as sf
 import torch
-import torchaudio
 from encodec import EncodecModel
 from encodec.utils import convert_audio
+
+
+def load_wav(path):
+    """Read audio as a [channels, samples] float32 tensor. Uses soundfile instead of
+    torchaudio.load, since recent torchaudio versions route audio I/O through
+    torchcodec, which pulls in a CUDA-only build that fails to import on a CPU machine."""
+    data, sr = sf.read(path, dtype="float32", always_2d=True)  # [samples, channels]
+    return torch.from_numpy(data.T), sr
+
 
 def main(input_file):
     model = EncodecModel.encodec_model_48khz()
     model.set_target_bandwidth(6.0)
 
-    wav, sr = torchaudio.load(input_file)
+    wav, sr = load_wav(input_file)
     wav = convert_audio(wav, sr, model.sample_rate, model.channels)
     wav = wav.unsqueeze(0)
 

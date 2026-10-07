@@ -1,12 +1,19 @@
 import torch
 import pandas as pd
 import os
-import torchaudio
+import soundfile as sf
 import json
 from encodec import EncodecModel
 from encodec.utils import convert_audio
 from denormalize import denormalize
 from torch.utils.data import Dataset
+
+
+def save_wav(path, wav, sample_rate):
+    """wav: [channels, samples] float tensor. Uses soundfile instead of torchaudio.save,
+    since recent torchaudio versions route audio I/O through torchcodec, which pulls in
+    a CUDA-only build that fails to import on a CPU machine."""
+    sf.write(path, wav.numpy().T, sample_rate)
 
 class MusicDataset(Dataset):
     def __init__(self, folder_path, interval_length=32, mask_length=2, sample_rate=50, **file_path):
@@ -161,7 +168,7 @@ def convert_to_wav(denorm_data, output_file):
     with torch.no_grad():
         decoded_audio = model.decode([encoded_frame])
     
-    torchaudio.save(output_file, decoded_audio.squeeze(0), sample_rate=model.sample_rate)
+    save_wav(output_file, decoded_audio.squeeze(0), model.sample_rate)
     print(f"Saved WAV file: {output_file}")
 def denormalize_data(data, mean, std):
     """Denormalizes the input tensor using provided mean and std values per channel."""

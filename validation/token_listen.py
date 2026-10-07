@@ -1,5 +1,5 @@
 import torch
-import torchaudio
+import soundfile as sf
 from encodec import EncodecModel
 from encodec.utils import convert_audio
 from torch.utils.data import DataLoader
@@ -7,12 +7,14 @@ from mamba_models.bidrectional_mamba import BidirectionalMamba
 from data.data_loader import MusicDataset
 import os
 
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
 # Define parameters matching the training script
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 INTERVAL_LENGTH = 32
 MASK_LENGTH = 2
 SAMPLE_RATE = 50
-FILE_PATH = "/home/aditya/DSU-W2025-FlowFusion-Automated-Song-Transitions/data/processed-tokens/"
+FILE_PATH = os.environ.get("AUTOMIX_DATA_PATH", os.path.join(REPO_ROOT, "data", "processed-tokens"))
 VOCAB_SIZE = 1024
 D_MODEL = 512
 NUM_LAYERS = 4
@@ -20,29 +22,36 @@ NUM_HEADS = 16
 D_FF = 2048
 MAX_SEQ_LENGTH = 1600
 DROPOUT = 0.2
-DEVICE = "cuda:2"
+
+
+def save_wav(path, wav, sample_rate):
+    """wav: [channels, samples] float tensor. Uses soundfile instead of torchaudio.save,
+    since recent torchaudio versions route audio I/O through torchcodec, which pulls in
+    a CUDA-only build that fails to import on a CPU machine."""
+    sf.write(path, wav.numpy().T, sample_rate)
+
 
 def convert_to_wav(denorm_data, output_file, device=DEVICE):  # Add device parameter
     model = EncodecModel.encodec_model_48khz().to(device)  # Move model to specified device
     model.set_target_bandwidth(6.0)
-    
+
     # Expected shape: [B, N, T], where N is number of codebooks (e.g., 4), T is time
     if denorm_data.dim() == 2:  # [T, N] from dataset
         denorm_data = denorm_data.transpose(0, 1)  # [N, T]
         denorm_data = denorm_data.unsqueeze(0)  # [1, N, T]
     elif denorm_data.dim() == 3:  # [1, T, N]
         denorm_data = denorm_data.transpose(1, 2)  # [1, N, T]
-    
+
     denorm_data = denorm_data.long().to(device)  # Ensure integer codes and move to device
-    
+
     print(f"Denorm data shape: {denorm_data.shape}")  # Debug print
-    
+
     encoded_frame = (denorm_data, None)  # (codes, scale) tuple
     with torch.no_grad():
         decoded_audio = model.decode([encoded_frame])
-    
+
     # Move decoded audio back to CPU for saving
-    torchaudio.save(output_file, decoded_audio.squeeze(0).cpu(), sample_rate=model.sample_rate)
+    save_wav(output_file, decoded_audio.squeeze(0).cpu(), model.sample_rate)
     print(f"Saved WAV file: {output_file}")
 
 def test_model(model_path, data_path, device, sample_number):
@@ -106,7 +115,10 @@ def test_model(model_path, data_path, device, sample_number):
 
 def main():
     # Define paths
-    model_path = "/home/aditya/DSU-W2025-FlowFusion-Automated-Song-Transitions/bidirectional_mamba_epoch_250.pt"
+    model_path = os.environ.get(
+        "AUTOMIX_CHECKPOINT_PATH",
+        os.path.join(REPO_ROOT, "runs", "mamba_runs", "bidirectional_mamba_epoch_250.pt"),
+    )
     data_path = FILE_PATH
     
     # Check if model file exists

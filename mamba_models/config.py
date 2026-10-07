@@ -1,7 +1,10 @@
+import os
 import torch
 
-# Toggle for enabling/disabling W&B logging
-WANDB_LOGS = True  
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# Toggle for enabling/disabling W&B logging (set AUTOMIX_WANDB_LOGS=1 to enable)
+WANDB_LOGS = os.environ.get("AUTOMIX_WANDB_LOGS", "0") == "1"
 
 # Define Training Parameters
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -11,7 +14,7 @@ LEARNING_RATE = 1e-4
 INTERVAL_LENGTH = 32
 MASK_LENGTH = 2
 SAMPLE_RATE = 50
-FILE_PATH = "/home/aditya/DSU-W2025-FlowFusion-Automated-Song-Transitions/data/processed-tokens/"
+FILE_PATH = os.environ.get("AUTOMIX_DATA_PATH", os.path.join(REPO_ROOT, "data", "processed-tokens"))
 
 # Normalization statistics
 EPSILON = 1e-6

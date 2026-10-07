@@ -12,10 +12,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import random
-import torchaudio
+import soundfile as sf
 from encodec import EncodecModel
 from encodec.utils import convert_audio
 from .config import *
+
+
+def save_wav(path, wav, sample_rate):
+    """wav: [channels, samples] float tensor. Uses soundfile instead of torchaudio.save,
+    since recent torchaudio versions route audio I/O through torchcodec, which pulls in
+    a CUDA-only build that fails to import on a CPU machine."""
+    sf.write(path, wav.numpy().T, sample_rate)
 
 load_dotenv()
 
@@ -71,7 +78,7 @@ def convert_to_wav(denorm_data, output_file, device=DEVICE):
     with torch.no_grad():
         decoded_audio = model.decode([encoded_frame])
     
-    torchaudio.save(output_file, decoded_audio.squeeze(0).cpu(), sample_rate=model.sample_rate)
+    save_wav(output_file, decoded_audio.squeeze(0).cpu(), model.sample_rate)
     return output_file
 
 # Visualization function

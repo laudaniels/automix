@@ -3,6 +3,7 @@ torch>=2.2
 torchaudio>=2.2
 transformers>=4.40
 encodec>=0.1.1
+soundfile>=0.12
 wandb>=0.16
 tqdm>=4.65
 matplotlib>=3.8
@@ -22,3 +23,7 @@ python-dotenv>=1.0
 # https://pytorch.org/get-started/locally/ for your CUDA version
 # BEFORE installing the rest of this file, otherwise pip will pull
 # the CPU-only wheels.
+#
+# Note: audio file I/O in this repo uses soundfile, not torchaudio.load/save --
+# recent torchaudio versions route those through torchcodec, which (at least in
+# its default pip build) requires a CUDA runtime and fails to import otherwise.

@@ -10,12 +10,19 @@ import wandb
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
-import torchaudio
+import soundfile as sf
 from encodec import EncodecModel
 from encodec.utils import convert_audio
 import random
 import sys
 from data.data_loader_test_2 import test_dataloader
+
+
+def save_wav(path, wav, sample_rate):
+    """wav: [channels, samples] float tensor. Uses soundfile instead of torchaudio.save,
+    since recent torchaudio versions route audio I/O through torchcodec, which pulls in
+    a CUDA-only build that fails to import on a CPU machine."""
+    sf.write(path, wav.numpy().T, sample_rate)
 
 # Initialize Weights & Biases if enabled
 if WANDB_LOGS:
@@ -105,7 +112,7 @@ def convert_to_wav(denorm_data, output_file, device=device):
     for i in range(decoded_audio.shape[0]):
         sample_audio = decoded_audio[i]  # [C, T]
         sample_file = f"{output_file[:-4]}_{i}.wav" if decoded_audio.shape[0] > 1 else output_file
-        torchaudio.save(sample_file, sample_audio.cpu(), sample_rate=model.sample_rate)
+        save_wav(sample_file, sample_audio.cpu(), model.sample_rate)
     return output_file  # Base file name
 
 # Visualization function

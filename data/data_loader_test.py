@@ -52,5 +52,6 @@ def visualize_sample(masked_interval, original_mask, sample_rate):
     plt.show()
 
 if __name__ == "__main__":
-    file_path = "/home/aditya/DSU-W2025-FlowFusion-Automated-Song-Transitions/data/processed-tokens/"
+    import os
+    file_path = os.environ.get("AUTOMIX_DATA_PATH", os.path.join(os.path.dirname(__file__), "processed-tokens"))
     test_music_dataset(file_path)
