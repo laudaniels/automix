@@ -1,0 +1,24 @@
+# Core (needed to train/run the BERT transformer model)
+torch>=2.2
+torchaudio>=2.2
+transformers>=4.40
+encodec>=0.1.1
+wandb>=0.16
+tqdm>=4.65
+matplotlib>=3.8
+numpy>=1.26
+
+# Data collection / preprocessing pipeline (process.sh, data/data-processing/*)
+pandas>=2.2
+requests>=2.31
+beautifulsoup4>=4.12
+spotipy>=2.23
+yt-dlp>=2024.3.10
+pydub>=0.25
+nltk>=3.8
+python-dotenv>=1.0
+
+# Note: on a CUDA machine, install torch/torchaudio following
+# https://pytorch.org/get-started/locally/ for your CUDA version
+# BEFORE installing the rest of this file, otherwise pip will pull
+# the CPU-only wheels.

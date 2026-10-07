@@ -24,3 +24,5 @@ wandb/
 mask_comparison_epoch*.png
 runs
 validation/__pycache__
+.venv/
+transformer_models/__pycache__/

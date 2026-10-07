@@ -35,7 +35,10 @@ if WANDB_LOGS:
     })
 
 # Initialize Dataset & DataLoader
-dataset = MusicDataset(DATA_PATH, INTERVAL_LENGTH, MASK_LENGTH, SAMPLE_RATE)
+# Cache the index alongside the data folder (rather than a fixed repo-root file) so
+# switching DATA_PATH / machines doesn't reuse a stale index from a different dataset.
+dataset_cache_file = os.path.join(DATA_PATH, "dataset_index.pt")
+dataset = MusicDataset(DATA_PATH, INTERVAL_LENGTH, MASK_LENGTH, SAMPLE_RATE, cache_file=dataset_cache_file)
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
 
 test_dataloader(dataset, dataloader)
@@ -53,7 +56,7 @@ else:
     print(f"Using single device: {device}")
 
 # Load Pre-trained Model
-model_path = "/home/aditya/DSU-W2025-FlowFusion-Automated-Song-Transitions/runs/transformer_runs/bert_epoch_135.pt"
+model_path = CHECKPOINT_PATH
 model = BERT_model(
     vocab_size=VOCAB_SIZE,
     d_model=D_MODEL,
@@ -64,10 +67,14 @@ model = BERT_model(
     dropout=DROPOUT,
 ).to(device)
 
-# Load the saved state dictionary
-state_dict = torch.load(model_path, map_location=device)
-model.load_state_dict(state_dict)
-print(f"Loaded pre-trained model from {model_path} (epoch 135)")
+# Load the saved state dictionary, if one is available
+if os.path.exists(model_path):
+    state_dict = torch.load(model_path, map_location=device)
+    model.load_state_dict(state_dict)
+    print(f"Loaded pre-trained model from {model_path} (resuming at epoch {START_EPOCH})")
+else:
+    print(f"No checkpoint found at {model_path}, starting from scratch (epoch 0)")
+    START_EPOCH = 0
 
 # Wrap the model with DataParallel if multiple GPUs are available (using cuda:2 and cuda:3)
 if num_gpus > 1:
@@ -313,7 +320,7 @@ def train(start_epoch=110):
 
 if __name__ == "__main__":
     try:
-        train(start_epoch=135)
+        train(start_epoch=START_EPOCH)
     except KeyboardInterrupt:
         print("Training interrupted by user.")
         if WANDB_LOGS:
